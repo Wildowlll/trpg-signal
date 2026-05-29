@@ -51,15 +51,21 @@ wss.on('connection', (ws, req) => {
       const msg = JSON.parse(data.toString());
       msg.from = peerId;
 
+      console.log(`[msg] ${peerId} → ${msg.to||'ALL'} type=${msg.type} session=${sessionId}`);
+
       if (msg.to) {
         // 특정 피어에게 1:1 전달
         const target = session.get(msg.to);
         if (target && target.readyState === target.OPEN) {
           target.send(JSON.stringify(msg));
+          console.log(`[→] delivered to ${msg.to}`);
+        } else {
+          console.log(`[!] target ${msg.to} not found or closed. session peers: ${[...session.keys()].join(',')}`);
         }
       } else {
         // 전체 브로드캐스트 (자신 제외)
         broadcast(session, peerId, msg);
+        console.log(`[→] broadcast to ${session.size-1} peers`);
       }
     } catch (err) {
       console.error('msg parse error:', err.message);
