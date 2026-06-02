@@ -12,11 +12,17 @@ const sessions = new Map();
 
 // HTTP 서버 (Railway 헬스체크용)
 const server = http.createServer((req, res) => {
+  // CORS 헤더
+  res.setHeader('Access-Control-Allow-Origin', '*');
+
   if (req.url === '/health') {
-    let peers = 0;
-    sessions.forEach(s => peers += s.size);
+    let peers = 0, gms = 0, sessions_count = sessions.size;
+    sessions.forEach(s => {
+      peers += s.size;
+      if (s.has('GM')) gms++;
+    });
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'ok', sessions: sessions.size, peers }));
+    res.end(JSON.stringify({ status: 'ok', sessions: sessions_count, peers, gms }));
     return;
   }
   res.writeHead(200);
@@ -24,7 +30,7 @@ const server = http.createServer((req, res) => {
 });
 
 // WebSocket 서버
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({ server, maxPayload: 64 * 1024 }); // 64KB
 
 wss.on('connection', (ws, req) => {
   const url = new URL(req.url, `http://localhost`);
