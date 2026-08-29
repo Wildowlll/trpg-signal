@@ -99,7 +99,12 @@ const server = http.createServer((req, res) => {
 
 
 // WebSocket 서버
-const wss = new WebSocketServer({ server, maxPayload: 64 * 1024 }); // 64KB
+const wss = new WebSocketServer({
+  server,
+  maxPayload: 100 * 1024 * 1024, // 100MB (파일 업로드 고려)
+  perMessageDeflate: false,       // 압축 비활성화 (CPU 부하 감소)
+  clientTracking: true,
+});
 
 wss.on('connection', (ws, req) => {
   const url = new URL(req.url, `http://localhost`);
